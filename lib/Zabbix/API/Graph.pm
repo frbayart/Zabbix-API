@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use 5.010;
 use Carp;
+use Params::Validate qw/:all/;
 
 use Params::Validate qw/validate :types/;
 use parent qw/Zabbix::API::CRUDE/;
