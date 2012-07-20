@@ -3,11 +3,22 @@ use strict;
 use warnings;
 use Module::Build;
 
-my $builder = Module::Build->new(
+my $class = Module::Build->subclass(
+    class => 'Module::Build::WithDebuild',
+    code => q{
+        sub ACTION_debuild {
+            system("debuild -i -us -uc -b");
+        }
+    },
+);
+
+
+my $builder = $class->new(
     module_name         => 'Zabbix::API',
     license             => 'GPL_3',
     dist_author         => [ q{Fabrice Gabolde <fabrice.gabolde@uperto.com>},
-                             q{Marc Dequenes <marc.dequenes@uperto.com>} ],
+                             q{Marc Dequenes <marc.dequenes@uperto.com>},
+                             q{Thierry Sallé <tsalle@uperto.com>} ],
     dist_version_from   => 'lib/Zabbix/API.pm',
     dist_abstract       => 'Access the JSON-RPC API of a Zabbix server',
     configure_requires => { 'Module::Build' => '0.36_14' },
