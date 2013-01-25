@@ -12,7 +12,7 @@ use Scalar::Util qw/weaken/;
 use JSON;
 use LWP::UserAgent;
 
-our $VERSION = '0.004';
+our $VERSION = '0.005';
 
 sub new {
 
@@ -20,7 +20,8 @@ sub new {
     my %args = validate(@_, { server => 1,
                               verbosity => 0,
                               env_proxy => 0,
-                              lazy => 0 });
+                              lazy => 0,
+                              ua => { optional => 1 } });
 
     my $self = \%args;
 
@@ -34,13 +35,20 @@ sub new {
     $self->{ua} = LWP::UserAgent->new(agent => 'Zabbix API client (libwww-perl)',
                                       from => 'fabrice.gabolde@uperto.com',
                                       show_progress => $self->{verbosity},
-                                      env_proxy => $self->{env_proxy},);
+                                      env_proxy => $self->{env_proxy},)
+                        unless $self->{ua};
 
     $self->{cookie} = '';
 
     bless $self, $class;
 
     return $self;
+
+}
+
+sub useragent {
+
+    return shift->{ua};
 
 }
 
@@ -442,6 +450,12 @@ C<Zabbix::API::> will be prepended if it is missing.
 
 Returns an arrayref of CLASS instances.
 
+=item useragent
+
+Accessor for the L<LWP::UserAgent> object that handles HTTP queries
+and responses.  Several useful options can be set: timeout, redirects,
+etc.
+
 =item verbosity([VERBOSITY])
 
 Mutator for the verbosity level.
@@ -517,12 +531,6 @@ different).
 
 A string containing the current session's auth cookie, or the empty string if
 unauthenticated.
-
-=item ua
-
-The LWP::UserAgent object that handles HTTP queries and responses.  This is
-probably the most interesting attribute since several useful options can be
-set: timeout, redirects, etc.
 
 =item env_proxy
 

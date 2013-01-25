@@ -34,9 +34,9 @@ my $builder = $class->new(
         'Params::Validate' => 0
     },
     add_to_cleanup      => [ 'Zabbix::API-*' ],
-    release_status      => 'testing',
+    release_status      => 'stable',
     meta_merge          => { resources =>
-                             { repository => 'git://github.com/SFR-ZABBIX/Zabbix-API.git' } },
+                             { repository => 'git://github.com/fgabolde/Zabbix-API.git' } },
 );
 
 $builder->create_build_script();
