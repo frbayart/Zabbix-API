@@ -10,6 +10,33 @@ libzabbix-api-perl (0.007) unstable; urgency=low
 
  -- Fabrice Gabolde <fgabolde@uperto.com>  Fri, 15 Feb 2013 11:40:30 +0100
 
+libzabbix-api-perl (0.005) precise; urgency=low
+
+  * Hostgroup class:
+    * name() accessor
+    * hosts() accessor
+  * Template support from Chris Larsen
+  * Proxy support from Chris Larsen
+  * Item class:
+    * history() accessor
+    * delay() accessor
+  * User support
+  * UserGroup support
+
+ -- T Salle <tsalle@uperto.com>  Fri, 25 Jan 2013 16:12:39 +0100
+
+libzabbix-api-perl (0.004-3) precise; urgency=low
+
+  * Added add_to_usergroup method for User
+
+ -- T Salle <tsalle@uperto.com>  Tue, 15 Jan 2013 16:53:57 +0100
+
+libzabbix-api-perl (0.004-2) precise; urgency=low
+
+  * New upstream release, with User and UserGroups added
+
+ -- T Salle <tsalle@uperto.com>  Tue, 15 Jan 2013 15:05:37 +0100
+
 libzabbix-api-perl (0.004-1) unstable; urgency=low
 
   * New upstream release.
