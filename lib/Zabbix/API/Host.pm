@@ -90,7 +90,32 @@ sub items {
 
 }
 
+
+sub delete {
+
+    my $self = shift;
+
+    if ($self->id) {
+
+        say sprintf('Deleting %s %s', $self->prefix, $self->id)
+            if $self->{root}->{verbosity};
+
+        $self->{root}->query(method => $self->prefix('.delete'),
+                             params => [ { $self->prefix('id') => $self->id } ]);
+
+    } else {
+
+        carp sprintf(q{Useless call of delete() on a %s that does not have a %s}, $self->prefix, $self->prefix('id'));
+
+    }
+
+    return $self;
+
+}
+
+
 1;
+
 __END__
 =pod
 
@@ -171,6 +196,12 @@ no name is set, for instance if the host has not been created on the server yet.
 This method returns a list of hosts colliding (i.e. matching) this one. If there
 if more than one colliding host found the implementation can not know
 on which one to perform updates and will bail out.
+
+=back
+
+=item interfaces()
+
+Accessor for the host's interfaces.
 
 =back
 
