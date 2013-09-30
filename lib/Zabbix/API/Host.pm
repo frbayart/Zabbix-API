@@ -114,6 +114,30 @@ sub delete {
 }
 
 
+sub interfaces {
+
+    ## accessor for interfaces
+
+    my ($self, $value) = @_;
+
+    if (defined $value) {
+
+        $self->data->{interfaces} = $value;
+
+    } else {
+
+        my $interfaces = $self->{root}->fetch('HostInterface', params => { hostids => [ $self->data->{hostid} ] });
+
+        $self->{interfaces} = $interfaces;
+
+        return $self->{interfaces};
+    }
+
+}
+
+
+
+
 1;
 
 __END__
