@@ -206,12 +206,8 @@ sub host {
 
         unless (exists $self->{host}) {
 
-            my $hosts = $self->{root}->fetch('Host', params => { hostids => [ $self->data->{hostid} ] });
-
-            croak 'Unexpectedly found more than one host for a given item'
-                if @{$hosts} > 1;
-
-            $self->{host} = $hosts->[0];
+            my $host = $self->{root}->fetch_single('Host', params => { hostids => [ $self->data->{hostid} ] });
+            $self->{host} = $host;
 
         }
 
@@ -320,6 +316,11 @@ Returns true if the item exists with this key on this hostid, false otherwise.
 Accessor for a local C<host> attribute, which it also happens to set from the
 server data if it isn't set already.  The host is an instance of
 C<Zabbix::API::Host>.
+
+=item graphs()
+
+Like C<host()>, returning an arrayref of C<Zabbix::API::Graph>
+instances in which this item is involved.
 
 =item history(PARAMS)
 

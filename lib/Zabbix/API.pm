@@ -12,7 +12,7 @@ use Scalar::Util qw/weaken/;
 use JSON;
 use LWP::UserAgent;
 
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 sub new {
 
@@ -21,7 +21,8 @@ sub new {
                               verbosity => 0,
                               env_proxy => 0,
                               lazy => 0,
-                              ua => { optional => 1 } });
+                              ua => { optional => 1 },
+                              cache => { optional => 1 } });
 
     my $self = \%args;
 
@@ -47,6 +48,12 @@ sub new {
 sub useragent {
 
     return shift->{ua};
+
+}
+
+sub cache {
+
+    return shift->{cache};
 
 }
 
@@ -151,28 +158,15 @@ sub raw_query {
     if ($@) {
 
         my $error = $@;
-
         confess $error;
 
     }
 
-    given ($self->{verbosity}) {
+    given ($self->verbosity) {
 
-        when (1) {
-
-            print $response->as_string;
-
-        }
-
-        when (2) {
-
-            print Dumper($response);
-
-        }
-
-        default {
-
-        }
+        when (1) { print $response->as_string; }
+        when (2) { print Dumper($response); }
+        default { }
 
     }
 
@@ -241,6 +235,13 @@ sub fetch {
 
     }
 
+    $class->can('new')
+        or croak "Class '$class' does not implement required 'new' method";
+    $class->can('prefix')
+        or croak "Class '$class' does not implement required 'prefix' method";
+    $class->can('extension')
+        or croak "Class '$class' does not implement required 'extension' method";
+
     my $response = $self->query(method => $class->prefix('.get'),
                                 params => {
                                     %{$args{params}},
@@ -255,9 +256,25 @@ sub fetch {
 
 sub fetch_single {
 
-    my ($self, @args) = @_;
+    my ($self, $class, %args) = @_;
 
-    my $results = $self->fetch(@args);
+    my $results;
+
+    if ($self->cache) {
+
+        $self->cache->remove(\%args) if ($args{refresh_cache});
+
+        # Cache is set up, try to use it
+        $results = $self->cache->compute(\%args, undef,
+                                         sub { $self->fetch($class, %args) });
+
+    } else {
+
+        # Cache is not set up
+        $results = $self->fetch($class, %args);
+
+    }
+
     my $result_count = scalar @{$results};
 
     if ($result_count > 1) {
@@ -324,17 +341,50 @@ in the unit tests.
 
 =over 4
 
-=item new(server => URL, [verbosity => INT], [env_proxy => BOOL])
+=item new(server => URL, [others])
 
 This is the main constructor for the Zabbix::API class.  It creates a
-LWP::UserAgent instance but does B<not> open any connections yet.
-C<env_proxy> is passed to the LWP::UserAgent constructor, so if it is set to a
-true value then the UA should follow C<$http_proxy> and others.
+LWP::UserAgent instance internally but does B<not> open any
+connections yet.  Returns an instance of the C<Zabbix::API> class.
 
-C<server> is misleading, as the URL expected is actually the whole path to the
-JSON-RPC page, which usually is C<http://example.com/zabbix/api_jsonrpc.php>.
+C<server> is misleading, as the URL expected is actually the whole
+path to the JSON-RPC page, which usually is
+C<http://example.com/zabbix/api_jsonrpc.php>.
 
-Returns an instance of the C<Zabbix::API> class.
+Other arguments accepted include:
+
+=over 4
+
+=item C<verbosity> (integer, default 0)
+
+controls the initial level of verbosity on STDOUT.
+
+=item C<env_proxy> (boolean, default false)
+
+is passed to the LWP::UserAgent constructor, so if it is set to a true
+value then the UA should follow C<$http_proxy> and others.
+
+=item C<lazy> (boolean, default false)
+
+controls whether the API object should fetch back updates after
+pushing data to the server, for e.g. values populated by default.  Use
+this wisely.  It should speed up applications that do mostly
+provisioning.
+
+=item C<ua> (L<LWP::UserAgent> instance or compatible)
+
+should be a valid user agent able to make HTTP queries.  The default
+value for this is pretty much a vanilla L<LWP::UserAgent> instance.
+Setting this to custom values may be useful depending on your setup.
+
+=item C<cache> (L<CHI> cache, default none)
+
+should be a configured CHI cache (or undef for no caching).  This
+allows the API to cache the results to any calls to C<fetch_single>.
+
+Zabbix::API does not support C<Cache::Cache> caches.
+
+=back
 
 =item login(user => STR, password => STR)
 
@@ -352,14 +402,11 @@ working with C<login>.
 Try to log out properly.  Unfortunately, the C<user.logout> method is completely
 undocumented and does not appear to work at the moment (see the bug report here:
 L<https://support.zabbix.com/browse/ZBX-3907>).  Users of this distribution are
-advised not to log out at all.  They will B<not be able to log back in> until the
+advised not to log out at all.  They may not be able to log back in until the
 server has decided their ban period is over (around 30s).  Furthermore, another
 bug in Zabbix (resolved in 1.8.5) prevents successful logins to reset the failed
 logins counter, which means that after three (possibly non-consecutive) failed
 logins every failed login triggers the ban period.
-
-The test suite logs in and out once per test file.  The logout method does not
-work.  There are more than three test files.  Do the math :(
 
 =item raw_query(method => STR, [params => HASHREF])
 
@@ -404,7 +451,7 @@ C<Zabbix::API::> will be prepended if it is missing.
 
 Returns an arrayref of CLASS instances.
 
-=item fetch_single(CLASS, [params => HASHREF])
+=item fetch_single(CLASS, [params => HASHREF], [refresh_cache => BOOL])
 
 Like C<fetch>, but also checks how many objects the server sent back.
 If no objects were sent, returns C<undef>.  If one object was sent,
@@ -412,6 +459,10 @@ returns that.  If more objects were sent, throws an exception.  This
 helps against malformed queries; Zabbix tends to return B<all> objects
 of a class when a query contains strange parameters (like "searhc" or
 "fliter").
+
+The results of this method are cached (for a given set of C<params>),
+if the cache has been setup.  The method can be forced to refresh the
+cache if C<refresh_cache> is set to a true value.
 
 =item useragent
 
@@ -472,6 +523,33 @@ Direct access to the LWP::UserAgent B<initial> configuration regarding
 proxies.  Setting this attribute after construction does nothing.
 
 =back
+
+=head1 TIPS AND TRICKS
+
+=head2 SSL SUPPORT
+
+L<LWP::UserAgent> supports SSL if you install L<LWP::Protocol::https>.
+You may need to configure L<LWP::UserAgent> manually, e.g.
+
+  my $zabbix = Zabbix::API->new(
+      ua => LWP::UserAgent->new(
+          ssl_opts => { verify_hostname => 0,
+                        SSL_verify_mode => 'SSL_VERIFY_NONE' }));
+
+=head2 CACHING
+
+Caching greatly speeds up some reporting generation tasks, e.g.
+
+  my $items = $zabbix->fetch('Item', params => ...);
+  say $_->name foreach @{$items};
+
+In this example, because the Item C<name> accessor needs the host's
+name (it's a convenience feature for whipuptitude... for serious
+reporting please use the contents of C<data>), for 2k items you'll
+pull 2k hosts.  There probably are fewer actual hosts than that.
+Since the Item C<host> accessor uses the C<hostid> to pull the correct
+host, you can be sure you're sending the same query over and over
+again.  This is an ideal situation for a cache.
 
 =head1 BUGS AND MISSING FEATURES
 
