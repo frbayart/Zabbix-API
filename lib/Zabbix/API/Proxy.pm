@@ -72,6 +72,30 @@ sub push {
 
 }
 
+sub delete {
+
+    my $self = shift;
+
+    if ($self->id) {
+
+        say sprintf('Deleting %s %s', $self->prefix, $self->id)
+            if $self->{root}->{verbosity};
+
+        $self->{root}->query(method => $self->prefix('.delete'),
+                             params => [ { $self->prefix('id') => $self->id } ]);
+
+    } else {
+
+        carp sprintf(q{Useless call of delete() on a %s that does not have a %s}, $self->prefix, $self->prefix('id'));
+
+    }
+
+    return $self;
+
+}
+
+
+
 1;
 __END__
 =pod
