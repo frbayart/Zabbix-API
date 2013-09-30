@@ -110,7 +110,6 @@ sub url {
     $url .= '&stime='.$args{start_time} if $args{start_time};
 
     return $url;
-
 }
 
 sub push {

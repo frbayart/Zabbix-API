@@ -9,6 +9,7 @@ libzabbix-api-perl (0.007) unstable; urgency=low
   * New upstream release.
 
  -- Fabrice Gabolde <fgabolde@uperto.com>  Fri, 15 Feb 2013 11:40:30 +0100
+>>>>>>> 93743bf4f7dec852657ed1ab30883dd58bf37164
 
 libzabbix-api-perl (0.005) precise; urgency=low
 
@@ -41,16 +42,16 @@ libzabbix-api-perl (0.004-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Marc Dequènes (Duck) <mdequenes@uperto.com>  Tue, 06 Sep 2011 19:16:48 +0200
+ -- Thierry Sallé <tsalle@uperto.com>  Tue, 06 Sep 2011 19:16:48 +0200
 
 libzabbix-api-perl (0.003-1) unstable; urgency=low
 
   * New upstream release.
 
- -- Marc Dequènes (Duck) <mdequenes@uperto.com>  Tue, 02 Aug 2011 10:24:50 +0200
+ -- Thierry Sallé <tsalle@uperto.com>  Tue, 02 Aug 2011 10:24:50 +0200
 
 libzabbix-api-perl (0.002-1) unstable; urgency=low
 
   * Initial Release.
 
- -- Marc Dequènes (Duck) <mdequenes@uperto.com>  Thu, 7 Apr 2011 15:37:45 +0200
+ -- Thierry Sallé <tsalle@uperto.com>  Thu, 7 Apr 2011 15:37:45 +0200

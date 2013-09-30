@@ -6,7 +6,6 @@ Build-Depends-Indep: libjson-perl,
  libparams-validate-perl,
  libtest-exception-perl,
  libwww-perl,
- perl (>= 5.10.0),
  perl (>= 5.10.1) | libparent-perl
 Maintainer: Thierry Sallé <tsalle@uperto.com>
 Standards-Version: 3.9.1
