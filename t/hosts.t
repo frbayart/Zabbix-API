@@ -34,25 +34,46 @@ isa_ok($zabhost, 'Zabbix::API::Host',
 ok($zabhost->created,
    '... and it returns true to existence tests');
 
-my $oldip = $zabhost->data->{ip};
+my $oldipmi_password = $zabhost->data->{ipmi_password};
 
-$zabhost->data->{ip} = '255.255.255.255';
+$zabhost->data->{ipmi_password} = 'newpassword';
 
 $zabhost->push;
 
 $zabhost->pull;
 
-is($zabhost->data->{ip}, '255.255.255.255',
+is($zabhost->data->{ipmi_password}, 'newpassword',
    '... and updated data can be pushed back to the server');
 
-$zabhost->data->{ip} = $oldip;
+$zabhost->data->{ip} = $oldipmi_password;
 $zabhost->push;
 
-my $new_host = Zabbix::API::Host->new(root => $zabber,
-                                      data => { host => 'Another Server',
-                                                ip => '255.255.255.255',
-                                                useip => 1,
-                                                groups => [ { groupid => 4 } ] });
+my $new_host;
+
+if ($zabber->api_version =~ /^1/) {
+
+    $new_host = Zabbix::API::Host->new(root => $zabber,
+                data => { host  => 'Another Server',
+                          ip    => '127.0.0.1',
+                          useip => 1,
+                          groups => [ { groupid => 4 } ] });
+
+} elsif ($zabber->api_version =~ /^2/) {
+
+    $new_host = Zabbix::API::Host->new(root => $zabber,
+                data => { host => 'Another Server',
+                          interfaces => [
+                              {
+                                  ip => '127.0.0.1',
+                                  dns => '',
+                                  port => '10050',
+                                  type => 1,
+                                  useip => 1,
+                                  main => 1
+                              }
+                          ],
+                          groups => [ { groupid => 4 } ] });
+}
 
 isa_ok($new_host, 'Zabbix::API::Host',
        '... and a host created manually');
@@ -66,7 +87,7 @@ ok($new_host->created,
 
 eval { $new_host->delete };
 
-if ($@) { diag "Caught exception: $@" };
+if ($@) { diag "Caught exception on delete : $@" };
 
 ok(!$new_host->created,
    '... and calling its delete method removes it from the server');
