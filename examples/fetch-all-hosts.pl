@@ -23,6 +23,9 @@ if ($@) {
 
 }
 
+my $api_version = $zabber->api_version;
+print "API version ".$api_version."\n";
+
 print Dump($_->data) foreach @{$zabber->fetch('Host')};
 
 eval { $zabber->logout };
